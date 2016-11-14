@@ -1,30 +1,34 @@
-# Maintainer: mar77i <mysatyre at gmail dot com>
+# Maintainer: mar77i <mar77i at mar77i dot ch>
 # Past Maintainer: Gaetan Bisson <bisson@archlinux.org>
 # Contributor: Scytrin dai Kinthra <scytrin@gmail.com>
 
 pkgname=st-git
 _pkgname=st
-pkgver=20160415.66556d9
+pkgver=0.7.9.g8c99915
 pkgrel=1
 pkgdesc='Simple virtual terminal emulator for X'
-url='http://git.suckless.org/st/'
+url='http://st.suckless.org/'
 arch=('i686' 'x86_64')
 license=('MIT')
+options=('zipman')
 depends=('libxft')
 makedepends=('ncurses' 'libxext' 'git')
+epoch=1
+# include config.h and any patches you want to have applied here
 source=('git://git.suckless.org/st' 'config.h')
+sha1sums=('SKIP' 'SKIP')
 
 provides=("${_pkgname}")
 conflicts=("${_pkgname}")
 
 pkgver() {
-	cd "${srcdir}/${_pkgname}"
-	git log -1 --format='%cd.%h' --date=short | tr -d -
+	cd "${_pkgname}"
+	git describe --tags |sed 's/-/./g'
 }
 
 prepare() {
 	local file
-	cd "${srcdir}/${_pkgname}"
+	cd "${_pkgname}"
 	sed \
 		-e '/char font/s/= .*/= "Fixed:pixelsize=13:style=SemiCondensed";/' \
 		-e '/char worddelimiters/s/= .*/= " '"'"'`\\\"()[]{}<>|";/' \
@@ -42,25 +46,21 @@ prepare() {
 			# add config.h if present in source array
 			# Note: this supersedes the above sed to config.def.h
 			cp "$srcdir/$file" .
-			continue
-		elif [[ "$file" == *.diff ]]; then
+		elif [[ "$file" == *.diff || "$file" == *.patch ]]; then
 			# add all patches present in source array
-			patch -Np1 <"$srcdir/$file"
+			patch -Np1 <"$srcdir/$(basename ${file})"
 		fi
 	done
 }
 
 build() {
-	cd "${srcdir}/${_pkgname}"
+	cd "${_pkgname}"
 	make X11INC=/usr/include/X11 X11LIB=/usr/lib/X11
 }
 
 package() {
-	cd "${srcdir}/${_pkgname}"
+	cd "${_pkgname}"
 	make PREFIX=/usr DESTDIR="${pkgdir}" install
 	install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 	install -Dm644 README "${pkgdir}/usr/share/doc/${pkgname}/README"
 }
-
-sha1sums=('SKIP'
-          'b6d4207b094c10486310aa137d922cd24dcf9d55')
